@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-topology.py — Integrated normal(iPerf)+attack(hping3) testbed for JKS-style pipeline.
-Single shared-link topology: h1-h3 normal, h4 attacker, h5 shared server/victim.
-
-Usage:
-    sudo python3 topology.py
-    (Run your Ryu controller separately first: ryu-manager ids_ryu_app.py)
-"""
+# topology.py 
 
 from mininet.net import Mininet
 from mininet.node import RemoteController, OVSKernelSwitch
@@ -33,7 +26,7 @@ def build_topology():
 
     print("*** Creating shared links (all hosts on same switch = shared bandwidth)")
     for h in [h1, h2, h3, h4, h5]:
-        net.addLink(h, s1, bw=100)  # 100 Mbps per link; shared switch capacity is the contention point
+        net.addLink(h, s1, bw=100)  
 
     print("*** Starting network")
     net.build()

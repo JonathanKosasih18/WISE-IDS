@@ -1,3 +1,5 @@
+# ids_ryu_app.py
+
 import os
 import time
 import logging
@@ -14,10 +16,10 @@ from ryu.lib import hub
 
 LOG = logging.getLogger('ids_ryu_app')
 
-# ── Configuration ─────────────────────────────────────────────────────────────
-POLL_INTERVAL   = 5          # seconds between OFPFlowStatsRequest polls
-BLOCK_TIMEOUT   = 60         # seconds the DROP rule stays installed
-PRIORITY_BLOCK  = 100        # must outrank the catch-all IP flows (priority 10)
+# ── Configuration 
+POLL_INTERVAL   = 5          
+BLOCK_TIMEOUT   = 60         
+PRIORITY_BLOCK  = 100       
 PRIORITY_IPFLOW = 10
 PRIORITY_MISS   = 0
 
@@ -52,7 +54,7 @@ class IDSRyuApp(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.datapaths   = {}
-        self.blocked_ips = {}   # {src_ip: block_timestamp} — avoid reblocking spam
+        self.blocked_ips = {}   
 
         # Load model artifacts
         LOG.info('Loading IDS model artifacts...')
@@ -66,7 +68,7 @@ class IDSRyuApp(app_manager.RyuApp):
         LOG.info('IDS started — polling every %ds, block_timeout=%ds',
                  POLL_INTERVAL, BLOCK_TIMEOUT)
 
-    # ── Background polling loop ───────────────────────────────────────────────
+    # ── Background polling loop 
 
     def _monitor_loop(self):
         while True:
@@ -79,7 +81,7 @@ class IDSRyuApp(app_manager.RyuApp):
         req = parser.OFPFlowStatsRequest(datapath)
         datapath.send_msg(req)
 
-    # ── Switch handshake ──────────────────────────────────────────────────────
+    # ── Switch handshake
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -107,7 +109,7 @@ class IDSRyuApp(app_manager.RyuApp):
         LOG.info('Switch connected dpid=%016x — IDS active (%d hosts x %d '
                  'protocols monitored)', dpid, len(hosts), len(monitored_protocols))
 
-    # ── PacketIn — basic flood forwarding (ARP etc.) ──────────────────────────
+    # ── PacketIn (basic flood forwarding)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
@@ -143,7 +145,7 @@ class IDSRyuApp(app_manager.RyuApp):
         )
         datapath.send_msg(mod)
 
-    # ── Auto-block: install DROP rule for an offending src IP ────────────────
+    # ── Auto-block: install DROP rule
 
     def _block_ip(self, datapath, src_ip):
         """Install a DROP flow for src_ip with hard_timeout=60s."""
@@ -172,7 +174,7 @@ class IDSRyuApp(app_manager.RyuApp):
             src_ip, PRIORITY_BLOCK, BLOCK_TIMEOUT
         )
 
-    # ── Flow stats reply → feature extraction → inference ─────────────────────
+    # ── Flow stats reply → feature extraction → inference 
 
     @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
     def flow_stats_reply_handler(self, ev):
@@ -180,7 +182,7 @@ class IDSRyuApp(app_manager.RyuApp):
         datapath = ev.msg.datapath
         checked  = 0
         flagged  = 0
-        cycle_status = {}   # {src_ip: 'ATTACK'/'normal'} — for the per-cycle summary log
+        cycle_status = {} 
 
         for stat in body:
             if stat.priority != PRIORITY_IPFLOW:
@@ -205,7 +207,7 @@ class IDSRyuApp(app_manager.RyuApp):
             if stat.packet_count == 0:
                 continue
 
-            # Encode protocol — handle unseen labels gracefully
+            # Encode protocol
             try:
                 proto_enc = int(self.proto_encoder.transform([proto_str])[0])
             except ValueError:
